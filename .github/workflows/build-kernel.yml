@@ -296,7 +296,19 @@ jobs:
             done
 
             # Remove abi_gki_protected_exports to prevent module build breaks
-            rm -f common/android/abi_gki_protected_exports_* 2>/dev/null || true
+            # FORK PATCH (6.1 support): on common-android14-6.1 these files ARE
+            # declared Bazel inputs -- common/BUILD.bazel references
+            # //common:android/abi_gki_protected_exports_x86_64 -- so deleting
+            # them fails the build with "missing input file". Only delete on
+            # branches where Kleaf does not consume them as inputs.
+            case "${{ env.KERNEL_MANIFEST_BRANCH }}" in
+              *6.1*)
+                echo "Skipping abi_gki_protected_exports removal: 6.1 declares it as a Bazel input"
+                ;;
+              *)
+                rm -f common/android/abi_gki_protected_exports_* 2>/dev/null || true
+                ;;
+            esac
 
             # Build static ksu_susfs tool for x86_64 if gcc is present
             if [ -d "susfs4ksu/ksu_susfs" ]; then
